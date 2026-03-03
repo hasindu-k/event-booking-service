@@ -1,12 +1,29 @@
 const Booking = require("../models/booking.model");
+const { ensureUserExists } = require("./interservice/user.service");
+const { ensureEventExists } = require("./interservice/event.service");
+const {
+  createPayment,
+  refundPayment,
+} = require("./interservice/payment.service");
 
 const createBookingRecord = async ({ userId, eventId, numberOfTickets }) => {
+  await ensureUserExists(userId);
+  await ensureEventExists(eventId);
+
+  const totalAmount = numberOfTickets * 1000;
+  const payment = await createPayment({
+    userId,
+    eventId,
+    numberOfTickets,
+    totalAmount,
+  });
+
   const booking = await Booking.create({
     userId,
     eventId,
     numberOfTickets,
-    totalAmount: numberOfTickets * 1000,
-    paymentStatus: "SUCCESS",
+    totalAmount,
+    paymentStatus: payment.status,
     bookingStatus: "CONFIRMED",
   });
 
@@ -16,6 +33,8 @@ const createBookingRecord = async ({ userId, eventId, numberOfTickets }) => {
     eventId: booking.eventId,
     numberOfTickets: booking.numberOfTickets,
     status: booking.bookingStatus,
+    paymentStatus: booking.paymentStatus,
+    paymentReferenceId: payment.referenceId,
   };
 };
 
@@ -77,7 +96,15 @@ const cancelBookingRecord = async (bookingId) => {
     };
   }
 
+  await refundPayment({
+    bookingId: booking.id,
+    userId: booking.userId,
+    eventId: booking.eventId,
+    totalAmount: booking.totalAmount,
+  });
+
   booking.bookingStatus = "CANCELLED";
+  booking.paymentStatus = "REFUNDED";
   await booking.save();
 
   return {
@@ -87,6 +114,7 @@ const cancelBookingRecord = async (bookingId) => {
       eventId: booking.eventId,
       numberOfTickets: booking.numberOfTickets,
       status: booking.bookingStatus,
+      paymentStatus: booking.paymentStatus,
     },
     paymentRefunded: true,
     seatsRestored: true,
