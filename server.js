@@ -1,15 +1,20 @@
 require("dotenv").config();
 
 const app = require("./src/app");
-const connectDB = require("./src/config/db");
+const { connectDB } = require("./src/config/db");
 
 const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`Booking service running on port ${PORT}`);
-  });
+  try {
+    await connectDB();
+    app.listen(PORT, () => {
+      console.log(`Booking service running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error(`Server startup failed: ${error.message}`);
+    process.exit(1);
+  }
 };
 
 startServer();
