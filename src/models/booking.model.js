@@ -10,7 +10,7 @@ const createBooking = ({ userId, eventId, numberOfTickets, status }) => {
     userId,
     eventId,
     numberOfTickets,
-    status
+    status,
   };
 
   bookings.push(booking);
@@ -29,9 +29,21 @@ const findBookingsByEventId = (eventId) => {
   return bookings.filter((booking) => booking.eventId === eventId);
 };
 
+const updateBookingStatus = (bookingId, status) => {
+  const booking = bookings.find((item) => item.id === bookingId);
+
+  if (!booking) {
+    return null;
+  }
+
+  booking.status = status;
+  return booking;
+};
+
 module.exports = {
   createBooking,
   findBookingById,
   findBookingsByUserId,
-  findBookingsByEventId
+  findBookingsByEventId,
+  updateBookingStatus,
 };

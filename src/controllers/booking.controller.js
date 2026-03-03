@@ -2,7 +2,8 @@ const {
   createBookingRecord,
   getBookingById,
   getBookingsByUser,
-  getBookingsByEvent
+  getBookingsByEvent,
+  cancelBookingRecord,
 } = require("../services/booking.service");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
 
@@ -14,7 +15,7 @@ const createBooking = (req, res, next) => {
       return errorResponse(
         res,
         "userId, eventId, and numberOfTickets are required",
-        400
+        400,
       );
     }
 
@@ -57,9 +58,24 @@ const getEventBookings = (req, res, next) => {
   }
 };
 
+const cancelBooking = (req, res, next) => {
+  try {
+    const result = cancelBookingRecord(req.params.bookingId);
+
+    if (!result) {
+      return errorResponse(res, "Booking not found", 404);
+    }
+
+    return successResponse(res, result);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   getBooking,
   getUserBookings,
-  getEventBookings
+  getEventBookings,
+  cancelBooking,
 };
