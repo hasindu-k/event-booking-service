@@ -1,64 +1,93 @@
-const {
-  createBooking,
-  findBookingById,
-  findBookingsByUserId,
-  findBookingsByEventId,
-  updateBookingStatus,
-} = require("../models/booking.model");
+const Booking = require("../models/booking.model");
 
-const createBookingRecord = ({ userId, eventId, numberOfTickets }) => {
-  return createBooking({
+const createBookingRecord = async ({ userId, eventId, numberOfTickets }) => {
+  const booking = await Booking.create({
     userId,
     eventId,
     numberOfTickets,
-    status: "CONFIRMED",
+    totalAmount: numberOfTickets * 1000,
+    paymentStatus: "SUCCESS",
+    bookingStatus: "CONFIRMED",
   });
+
+  return {
+    id: booking.id,
+    userId: booking.userId,
+    eventId: booking.eventId,
+    numberOfTickets: booking.numberOfTickets,
+    status: booking.bookingStatus,
+  };
 };
 
-const getBookingById = (bookingId) => {
-  return findBookingById(bookingId);
-};
-
-const getBookingsByUser = (userId) => {
-  return findBookingsByUserId(userId).map(
-    ({ id, eventId, numberOfTickets }) => ({
-      id,
-      eventId,
-      numberOfTickets,
-    }),
-  );
-};
-
-const getBookingsByEvent = (eventId) => {
-  return findBookingsByEventId(eventId).map(
-    ({ id, userId, numberOfTickets }) => ({
-      id,
-      userId,
-      numberOfTickets,
-    }),
-  );
-};
-
-const cancelBookingRecord = (bookingId) => {
-  const booking = findBookingById(bookingId);
+const getBookingById = async (bookingId) => {
+  const booking = await Booking.findById(bookingId);
 
   if (!booking) {
     return null;
   }
 
-  if (booking.status === "CANCELLED") {
+  return {
+    id: booking.id,
+    userId: booking.userId,
+    eventId: booking.eventId,
+    numberOfTickets: booking.numberOfTickets,
+    status: booking.bookingStatus,
+  };
+};
+
+const getBookingsByUser = async (userId) => {
+  const bookings = await Booking.find({ userId });
+
+  return bookings.map(({ id, eventId, numberOfTickets }) => ({
+    id,
+    eventId,
+    numberOfTickets,
+  }));
+};
+
+const getBookingsByEvent = async (eventId) => {
+  const bookings = await Booking.find({ eventId });
+
+  return bookings.map(({ id, userId, numberOfTickets }) => ({
+    id,
+    userId,
+    numberOfTickets,
+  }));
+};
+
+const cancelBookingRecord = async (bookingId) => {
+  const booking = await Booking.findById(bookingId);
+
+  if (!booking) {
+    return null;
+  }
+
+  if (booking.bookingStatus === "CANCELLED") {
     return {
-      booking,
+      booking: {
+        id: booking.id,
+        userId: booking.userId,
+        eventId: booking.eventId,
+        numberOfTickets: booking.numberOfTickets,
+        status: booking.bookingStatus,
+      },
       paymentRefunded: false,
       seatsRestored: false,
       message: "Booking is already cancelled",
     };
   }
 
-  const updatedBooking = updateBookingStatus(bookingId, "CANCELLED");
+  booking.bookingStatus = "CANCELLED";
+  await booking.save();
 
   return {
-    booking: updatedBooking,
+    booking: {
+      id: booking.id,
+      userId: booking.userId,
+      eventId: booking.eventId,
+      numberOfTickets: booking.numberOfTickets,
+      status: booking.bookingStatus,
+    },
     paymentRefunded: true,
     seatsRestored: true,
     message: "Booking cancelled successfully",

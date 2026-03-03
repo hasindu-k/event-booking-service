@@ -7,7 +7,7 @@ const {
 } = require("../services/booking.service");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
 
-const createBooking = (req, res, next) => {
+const createBooking = async (req, res, next) => {
   try {
     const { userId, eventId, numberOfTickets } = req.body;
 
@@ -19,16 +19,20 @@ const createBooking = (req, res, next) => {
       );
     }
 
-    const booking = createBookingRecord({ userId, eventId, numberOfTickets });
+    const booking = await createBookingRecord({
+      userId,
+      eventId,
+      numberOfTickets,
+    });
     return successResponse(res, booking, 201);
   } catch (error) {
     return next(error);
   }
 };
 
-const getBooking = (req, res, next) => {
+const getBooking = async (req, res, next) => {
   try {
-    const booking = getBookingById(req.params.bookingId);
+    const booking = await getBookingById(req.params.bookingId);
 
     if (!booking) {
       return errorResponse(res, "Booking not found", 404);
@@ -40,27 +44,27 @@ const getBooking = (req, res, next) => {
   }
 };
 
-const getUserBookings = (req, res, next) => {
+const getUserBookings = async (req, res, next) => {
   try {
-    const bookings = getBookingsByUser(req.params.userId);
+    const bookings = await getBookingsByUser(req.params.userId);
     return successResponse(res, bookings);
   } catch (error) {
     return next(error);
   }
 };
 
-const getEventBookings = (req, res, next) => {
+const getEventBookings = async (req, res, next) => {
   try {
-    const bookings = getBookingsByEvent(req.params.eventId);
+    const bookings = await getBookingsByEvent(req.params.eventId);
     return successResponse(res, bookings);
   } catch (error) {
     return next(error);
   }
 };
 
-const cancelBooking = (req, res, next) => {
+const cancelBooking = async (req, res, next) => {
   try {
-    const result = cancelBookingRecord(req.params.bookingId);
+    const result = await cancelBookingRecord(req.params.bookingId);
 
     if (!result) {
       return errorResponse(res, "Booking not found", 404);
