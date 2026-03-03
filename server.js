@@ -1,0 +1,13 @@
+const app = require("./src/app");
+const connectDB = require("./src/config/db");
+
+const PORT = process.env.PORT || 3000;
+
+const startServer = async () => {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`Booking service running on port ${PORT}`);
+  });
+};
+
+startServer();

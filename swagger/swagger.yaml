@@ -1,0 +1,17 @@
+openapi: 3.0.0
+info:
+  title: Event Booking Service API
+  version: 1.0.0
+paths:
+  /bookings:
+    post:
+      summary: Create booking
+  /bookings/{bookingId}:
+    get:
+      summary: Get booking by ID
+  /bookings/user/{userId}:
+    get:
+      summary: Get bookings by user
+  /bookings/event/{eventId}:
+    get:
+      summary: Get bookings by event
