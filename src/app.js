@@ -1,11 +1,19 @@
 const express = require("express");
+const path = require("node:path");
+const swaggerUi = require("swagger-ui-express");
+const YAML = require("yamljs");
 const bookingRoutes = require("./routes/booking.routes");
 const errorHandler = require("./middleware/errorHandler");
 const { getDbStatus } = require("./config/db");
 
 const app = express();
+const swaggerDocument = YAML.load(
+  path.join(__dirname, "..", "swagger", "swagger.yaml"),
+);
 
 app.use(express.json());
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use((req, res, next) => {
   console.log("Booking service received:", req.method, req.url);
@@ -23,7 +31,7 @@ app.get("/health/db", (req, res) => {
   });
 });
 
-app.use("/", bookingRoutes);
+app.use("/bookings", bookingRoutes);
 
 app.use((req, res) => {
   return res.status(404).json({ message: "Route not found" });
