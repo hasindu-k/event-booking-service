@@ -7,6 +7,11 @@ const app = express();
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+  console.log("Booking service received:", req.method, req.url);
+  next();
+});
+
 app.get("/health/db", (req, res) => {
   const dbStatus = getDbStatus();
   const statusCode = dbStatus.state === "connected" ? 200 : 503;
