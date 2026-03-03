@@ -18,7 +18,7 @@ app.get("/health/db", (req, res) => {
   });
 });
 
-app.use("/bookings", bookingRoutes);
+app.use("/", bookingRoutes);
 
 app.use((req, res) => {
   return res.status(404).json({ message: "Route not found" });
