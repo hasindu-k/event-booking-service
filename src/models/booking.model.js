@@ -5,8 +5,16 @@ const bookingSchema = new mongoose.Schema({
   eventId: { type: String, required: true },
   numberOfTickets: { type: Number, required: true },
   totalAmount: { type: Number, required: true },
-  paymentStatus: { type: String, default: "SUCCESS" }, // PENDING, SUCCESS, FAILED
-  bookingStatus: { type: String, default: "CONFIRMED" }, // PENDING, CONFIRMED, CANCELLED
+  paymentStatus: {
+    type: String,
+    enum: ["PENDING", "SUCCESS", "FAILED", "REFUNDED"],
+    default: "PENDING",
+  },
+  bookingStatus: {
+    type: String,
+    enum: ["PENDING", "CONFIRMED", "CANCELLED"],
+    default: "PENDING",
+  },
   createdAt: { type: Date, default: Date.now },
 });
 
