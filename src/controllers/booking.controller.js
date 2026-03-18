@@ -59,7 +59,8 @@ const getUserBookings = async (req, res, next) => {
 
 const getEventBookings = async (req, res, next) => {
   try {
-    const bookings = await getBookingsByEvent(req.params.eventId);
+    const { status } = req.query;
+    const bookings = await getBookingsByEvent(req.params.eventId, status);
     return successResponse(res, bookings);
   } catch (error) {
     return next(error);

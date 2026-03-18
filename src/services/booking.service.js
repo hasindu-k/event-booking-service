@@ -90,14 +90,22 @@ const getBookingsByUser = async (userId, status) => {
   );
 };
 
-const getBookingsByEvent = async (eventId) => {
-  const bookings = await Booking.find({ eventId });
+const getBookingsByEvent = async (eventId, status) => {
+  const query = { eventId };
+  if (status) {
+    query.bookingStatus = status;
+  }
+  const bookings = await Booking.find(query);
 
-  return bookings.map(({ id, userId, numberOfTickets }) => ({
-    id,
-    userId,
-    numberOfTickets,
-  }));
+  return bookings.map(
+    ({ id, userId, numberOfTickets, bookingStatus, paymentStatus }) => ({
+      id,
+      userId,
+      numberOfTickets,
+      status: bookingStatus,
+      paymentStatus,
+    }),
+  );
 };
 
 const cancelBookingRecord = async (bookingId, token) => {
