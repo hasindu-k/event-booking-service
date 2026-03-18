@@ -1,5 +1,6 @@
 const express = require("express");
 const path = require("node:path");
+const cors = require("cors");
 const swaggerUi = require("swagger-ui-express");
 const YAML = require("yamljs");
 const bookingRoutes = require("./routes/booking.routes");
@@ -7,6 +8,11 @@ const errorHandler = require("./middleware/errorHandler");
 const { getDbStatus } = require("./config/db");
 
 const app = express();
+app.use(
+  cors({
+    origin: process.env.API_GATEWAY_URL || "http://localhost:8080",
+  }),
+);
 const swaggerDocument = YAML.load(
   path.join(__dirname, "..", "swagger", "swagger.yaml"),
 );
@@ -31,7 +37,7 @@ app.get("/health/db", (req, res) => {
   });
 });
 
-app.use("/bookings", bookingRoutes);
+app.use("/", bookingRoutes);
 
 app.use((req, res) => {
   return res.status(404).json({ message: "Route not found" });

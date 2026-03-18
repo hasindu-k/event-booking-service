@@ -2,16 +2,207 @@ openapi: 3.0.0
 info:
   title: Event Booking Service API
   version: 1.0.0
+  description: API for managing event bookings
+servers:
+  - url: http://localhost:3001
+    description: Local server
 paths:
-  /bookings:
+  /:
     post:
-      summary: Create booking
-  /bookings/{bookingId}:
+      summary: Create a new booking
+      tags:
+        - Bookings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBookingRequest"
+      responses:
+        "201":
+          description: Booking created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingResponse"
+        "400":
+          description: Invalid input
+        "500":
+          description: Internal server error
+  /{bookingId}:
     get:
       summary: Get booking by ID
-  /bookings/user/{userId}:
+      tags:
+        - Bookings
+      parameters:
+        - in: path
+          name: bookingId
+          schema:
+            type: string
+          required: true
+          description: The booking ID
+      responses:
+        "200":
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingDetails"
+        "404":
+          description: Booking not found
+        "500":
+          description: Internal server error
+    delete:
+      summary: Cancel a booking
+      tags:
+        - Bookings
+      parameters:
+        - in: path
+          name: bookingId
+          schema:
+            type: string
+          required: true
+          description: The booking ID
+      responses:
+        "200":
+          description: Booking cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelBookingResponse"
+        "404":
+          description: Booking not found
+        "500":
+          description: Internal server error
+  /user/{userId}:
     get:
-      summary: Get bookings by user
-  /bookings/event/{eventId}:
+      summary: Get bookings by user ID
+      tags:
+        - Bookings
+      parameters:
+        - in: path
+          name: userId
+          schema:
+            type: string
+          required: true
+          description: The user ID
+      responses:
+        "200":
+          description: List of user bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserBooking"
+        "500":
+          description: Internal server error
+  /event/{eventId}:
     get:
-      summary: Get bookings by event
+      summary: Get bookings by event ID
+      tags:
+        - Bookings
+      parameters:
+        - in: path
+          name: eventId
+          schema:
+            type: string
+          required: true
+          description: The event ID
+      responses:
+        "200":
+          description: List of event bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EventBooking"
+        "500":
+          description: Internal server error
+
+components:
+  schemas:
+    CreateBookingRequest:
+      type: object
+      required:
+        - userId
+        - eventId
+        - numberOfTickets
+      properties:
+        userId:
+          type: string
+          description: ID of the user creating the booking
+        eventId:
+          type: string
+          description: ID of the event to book
+        numberOfTickets:
+          type: integer
+          minimum: 1
+          description: Number of tickets to book
+
+    BookingResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        eventId:
+          type: string
+        numberOfTickets:
+          type: integer
+        status:
+          type: string
+        paymentStatus:
+          type: string
+        paymentReferenceId:
+          type: string
+
+    BookingDetails:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        eventId:
+          type: string
+        numberOfTickets:
+          type: integer
+        status:
+          type: string
+        paymentStatus:
+          type: string
+
+    UserBooking:
+      type: object
+      properties:
+        id:
+          type: string
+        eventId:
+          type: string
+        numberOfTickets:
+          type: integer
+
+    EventBooking:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        numberOfTickets:
+          type: integer
+
+    CancelBookingResponse:
+      type: object
+      properties:
+        booking:
+          $ref: "#/components/schemas/BookingDetails"
+        paymentRefunded:
+          type: boolean
+        seatsRestored:
+          type: boolean
+        message:
+          type: string
