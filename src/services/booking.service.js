@@ -3,10 +3,7 @@ const {
   ensureEventExists,
   updateEventSeats,
 } = require("./interservice/event.service");
-const {
-  createPayment,
-  refundPayment,
-} = require("./interservice/payment.service");
+const { refundPayment } = require("./interservice/payment.service");
 
 const createBookingRecord = async ({
   userId,
@@ -73,6 +70,7 @@ const getBookingById = async (bookingId) => {
     userId: booking.userId,
     eventId: booking.eventId,
     numberOfTickets: booking.numberOfTickets,
+    totalAmount: booking.totalAmount,
     status: booking.bookingStatus,
   };
 };
@@ -85,10 +83,18 @@ const getBookingsByUser = async (userId, status) => {
   const bookings = await Booking.find(query);
 
   return bookings.map(
-    ({ id, eventId, numberOfTickets, bookingStatus, paymentStatus }) => ({
+    ({
       id,
       eventId,
       numberOfTickets,
+      totalAmount,
+      bookingStatus,
+      paymentStatus,
+    }) => ({
+      id,
+      eventId,
+      numberOfTickets,
+      totalAmount,
       status: bookingStatus,
       paymentStatus,
     }),
@@ -103,10 +109,18 @@ const getBookingsByEvent = async (eventId, status) => {
   const bookings = await Booking.find(query);
 
   return bookings.map(
-    ({ id, userId, numberOfTickets, bookingStatus, paymentStatus }) => ({
+    ({
       id,
       userId,
       numberOfTickets,
+      totalAmount,
+      bookingStatus,
+      paymentStatus,
+    }) => ({
+      id,
+      userId,
+      numberOfTickets,
+      totalAmount,
       status: bookingStatus,
       paymentStatus,
     }),
