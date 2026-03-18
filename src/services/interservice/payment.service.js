@@ -10,11 +10,13 @@ const createPayment = async ({
   eventId,
   numberOfTickets,
   totalAmount,
+  token,
 }) => {
   try {
     const paymentResponse = await gatewayRequest({
       method: "POST",
       path: pathTemplates.paymentCharge,
+      token,
       body: {
         userId,
         eventId,

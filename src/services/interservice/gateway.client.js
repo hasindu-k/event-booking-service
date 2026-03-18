@@ -13,7 +13,7 @@ const buildPath = (template, replacements = {}) => {
   }, template);
 };
 
-const gatewayRequest = async ({ method = "GET", path, body }) => {
+const gatewayRequest = async ({ method = "GET", path, body, token }) => {
   if (!gatewayUrl) {
     throw createHttpError("API_GATEWAY_URL is not configured", 500);
   }
@@ -23,15 +23,21 @@ const gatewayRequest = async ({ method = "GET", path, body }) => {
     : gatewayUrl;
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
+  const headers = {
+    "Content-Type": "application/json",
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => abortController.abort(), gatewayTimeoutMs);
 
   try {
     const response = await fetch(`${normalizedBase}${normalizedPath}`, {
       method,
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: body ? JSON.stringify(body) : undefined,
       signal: abortController.signal,
     });

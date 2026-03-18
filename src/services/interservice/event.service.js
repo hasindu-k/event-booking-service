@@ -8,11 +8,11 @@ const pathTemplates = {
   eventLookup: process.env.GATEWAY_EVENT_LOOKUP_PATH || "/events/{eventId}",
 };
 
-const ensureEventExists = async (eventId) => {
+const ensureEventExists = async (eventId, token) => {
   const eventPath = buildPath(pathTemplates.eventLookup, { eventId });
 
   try {
-    await gatewayRequest({ method: "GET", path: eventPath });
+    await gatewayRequest({ method: "GET", path: eventPath, token });
   } catch (error) {
     if (error.statusCode === 404) {
       throw createHttpError("Event not found", 404);

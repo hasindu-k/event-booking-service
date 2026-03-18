@@ -1,13 +1,17 @@
 const Booking = require("../models/booking.model");
-const { ensureUserExists } = require("./interservice/user.service");
 const { ensureEventExists } = require("./interservice/event.service");
 const {
   createPayment,
   refundPayment,
 } = require("./interservice/payment.service");
 
-const createBookingRecord = async ({ userId, eventId, numberOfTickets }) => {
-  await ensureUserExists(userId);
+const createBookingRecord = async ({
+  userId,
+  eventId,
+  numberOfTickets,
+  token,
+}) => {
+  await ensureEventExists(eventId, token);
 
   const totalAmount = numberOfTickets * 1000;
 
@@ -96,7 +100,7 @@ const getBookingsByEvent = async (eventId) => {
   }));
 };
 
-const cancelBookingRecord = async (bookingId) => {
+const cancelBookingRecord = async (bookingId, token) => {
   const booking = await Booking.findById(bookingId);
 
   if (!booking) {
@@ -123,6 +127,7 @@ const cancelBookingRecord = async (bookingId) => {
     userId: booking.userId,
     eventId: booking.eventId,
     totalAmount: booking.totalAmount,
+    token,
   });
 
   booking.bookingStatus = "CANCELLED";

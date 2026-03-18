@@ -8,11 +8,11 @@ const pathTemplates = {
   userLookup: process.env.GATEWAY_USER_LOOKUP_PATH || "/users/{userId}",
 };
 
-const ensureUserExists = async (userId) => {
+const ensureUserExists = async (userId, token) => {
   const userPath = buildPath(pathTemplates.userLookup, { userId });
 
   try {
-    await gatewayRequest({ method: "GET", path: userPath });
+    await gatewayRequest({ method: "GET", path: userPath, token });
   } catch (error) {
     if (error.statusCode === 404) {
       throw createHttpError("User not found", 404);

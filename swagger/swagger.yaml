@@ -74,6 +74,44 @@ paths:
           description: Booking not found
         "500":
           description: Internal server error
+  /{bookingId}/payment:
+    patch:
+      summary: Update booking payment status
+      tags:
+        - Bookings
+      parameters:
+        - in: path
+          name: bookingId
+          schema:
+            type: string
+          required: true
+          description: The booking ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - paymentStatus
+              properties:
+                paymentStatus:
+                  type: string
+                  description: New payment status
+                  example: SUCCESS
+      responses:
+        "200":
+          description: Payment status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingDetails"
+        "400":
+          description: Invalid input
+        "404":
+          description: Booking not found
+        "500":
+          description: Internal server error
   /user/{userId}:
     get:
       summary: Get bookings by user ID
@@ -86,6 +124,12 @@ paths:
             type: string
           required: true
           description: The user ID
+        - in: query
+          name: status
+          schema:
+            type: string
+          required: false
+          description: Filter by booking status
       responses:
         "200":
           description: List of user bookings
@@ -126,13 +170,9 @@ components:
     CreateBookingRequest:
       type: object
       required:
-        - userId
         - eventId
         - numberOfTickets
       properties:
-        userId:
-          type: string
-          description: ID of the user creating the booking
         eventId:
           type: string
           description: ID of the event to book
@@ -184,6 +224,10 @@ components:
           type: string
         numberOfTickets:
           type: integer
+        status:
+          type: string
+        paymentStatus:
+          type: string
 
     EventBooking:
       type: object

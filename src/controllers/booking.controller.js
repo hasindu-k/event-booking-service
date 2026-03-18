@@ -25,6 +25,7 @@ const createBooking = async (req, res, next) => {
       userId,
       eventId,
       numberOfTickets,
+      token: req.token,
     });
     return successResponse(res, booking, 201);
   } catch (error) {
@@ -67,7 +68,7 @@ const getEventBookings = async (req, res, next) => {
 
 const cancelBooking = async (req, res, next) => {
   try {
-    const result = await cancelBookingRecord(req.params.bookingId);
+    const result = await cancelBookingRecord(req.params.bookingId, req.token);
 
     if (!result) {
       return errorResponse(res, "Booking not found", 404);
