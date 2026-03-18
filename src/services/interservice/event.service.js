@@ -6,6 +6,8 @@ const {
 
 const pathTemplates = {
   eventLookup: process.env.GATEWAY_EVENT_LOOKUP_PATH || "/events/{eventId}",
+  eventSeatUpdate:
+    process.env.GATEWAY_EVENT_SEAT_UPDATE_PATH || "/events/{eventId}/seats",
 };
 
 const ensureEventExists = async (eventId, token) => {
@@ -22,6 +24,19 @@ const ensureEventExists = async (eventId, token) => {
   }
 };
 
+const updateEventSeats = async (eventId, seatChange, operation, token) => {
+  const eventSeatUpdatePath = buildPath(pathTemplates.eventSeatUpdate, {
+    eventId,
+  });
+  await gatewayRequest({
+    method: "PUT",
+    path: eventSeatUpdatePath,
+    token,
+    body: { quantity: seatChange, operation: operation },
+  });
+};
+
 module.exports = {
   ensureEventExists,
+  updateEventSeats,
 };
