@@ -4,17 +4,19 @@ const {
   getBookingsByUser,
   getBookingsByEvent,
   cancelBookingRecord,
+  updateBookingPaymentStatus,
 } = require("../services/booking.service");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
 
 const createBooking = async (req, res, next) => {
   try {
-    const { userId, eventId, numberOfTickets } = req.body;
+    const userId = req.user.id;
+    const { eventId, numberOfTickets } = req.body;
 
-    if (!userId || !eventId || !numberOfTickets) {
+    if (!eventId || !numberOfTickets) {
       return errorResponse(
         res,
-        "userId, eventId, and numberOfTickets are required",
+        "eventId and numberOfTickets are required",
         400,
       );
     }
@@ -46,7 +48,8 @@ const getBooking = async (req, res, next) => {
 
 const getUserBookings = async (req, res, next) => {
   try {
-    const bookings = await getBookingsByUser(req.params.userId);
+    const { status } = req.query;
+    const bookings = await getBookingsByUser(req.params.userId, status);
     return successResponse(res, bookings);
   } catch (error) {
     return next(error);
@@ -76,10 +79,33 @@ const cancelBooking = async (req, res, next) => {
   }
 };
 
+const updatePaymentStatus = async (req, res, next) => {
+  try {
+    const { paymentStatus } = req.body;
+    if (!paymentStatus) {
+      return errorResponse(res, "paymentStatus is required", 400);
+    }
+
+    const booking = await updateBookingPaymentStatus(
+      req.params.bookingId,
+      paymentStatus,
+    );
+
+    if (!booking) {
+      return errorResponse(res, "Booking not found", 404);
+    }
+
+    return successResponse(res, booking);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   getBooking,
   getUserBookings,
   getEventBookings,
   cancelBooking,
+  updatePaymentStatus,
 };

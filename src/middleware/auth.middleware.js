@@ -1,3 +1,5 @@
+const jwt = require("jsonwebtoken");
+
 const verifyToken = (req, res, next) => {
   const authHeader = req.header("Authorization");
 
@@ -20,10 +22,8 @@ const verifyToken = (req, res, next) => {
   }
 
   try {
-    // Optionally verify token here if a secret or public key is available
-    // For now, we pass the token forward
-    req.user = undefined; // decoded user data would go here
-    req.token = token;
+    const verified = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = verified;
     next();
   } catch (err) {
     res.status(400).json({ message: "Invalid Token" });

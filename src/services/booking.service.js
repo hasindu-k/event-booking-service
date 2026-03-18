@@ -8,23 +8,16 @@ const {
 
 const createBookingRecord = async ({ userId, eventId, numberOfTickets }) => {
   await ensureUserExists(userId);
-  await ensureEventExists(eventId);
 
   const totalAmount = numberOfTickets * 1000;
-  const payment = await createPayment({
-    userId,
-    eventId,
-    numberOfTickets,
-    totalAmount,
-  });
 
   const booking = await Booking.create({
     userId,
     eventId,
     numberOfTickets,
     totalAmount,
-    paymentStatus: payment.status,
-    bookingStatus: "CONFIRMED",
+    paymentStatus: "PENDING",
+    bookingStatus: "PENDING",
   });
 
   return {
@@ -34,7 +27,28 @@ const createBookingRecord = async ({ userId, eventId, numberOfTickets }) => {
     numberOfTickets: booking.numberOfTickets,
     status: booking.bookingStatus,
     paymentStatus: booking.paymentStatus,
-    paymentReferenceId: payment.referenceId,
+    totalAmount: booking.totalAmount,
+  };
+};
+
+const updateBookingPaymentStatus = async (bookingId, paymentStatus) => {
+  const booking = await Booking.findById(bookingId);
+
+  if (!booking) {
+    return null;
+  }
+
+  booking.paymentStatus = paymentStatus;
+  if (paymentStatus === "SUCCESS") {
+    booking.bookingStatus = "CONFIRMED";
+  }
+
+  await booking.save();
+
+  return {
+    id: booking.id,
+    status: booking.bookingStatus,
+    paymentStatus: booking.paymentStatus,
   };
 };
 
@@ -54,14 +68,22 @@ const getBookingById = async (bookingId) => {
   };
 };
 
-const getBookingsByUser = async (userId) => {
-  const bookings = await Booking.find({ userId });
+const getBookingsByUser = async (userId, status) => {
+  const query = { userId };
+  if (status) {
+    query.bookingStatus = status;
+  }
+  const bookings = await Booking.find(query);
 
-  return bookings.map(({ id, eventId, numberOfTickets }) => ({
-    id,
-    eventId,
-    numberOfTickets,
-  }));
+  return bookings.map(
+    ({ id, eventId, numberOfTickets, bookingStatus, paymentStatus }) => ({
+      id,
+      eventId,
+      numberOfTickets,
+      status: bookingStatus,
+      paymentStatus,
+    }),
+  );
 };
 
 const getBookingsByEvent = async (eventId) => {
@@ -128,4 +150,5 @@ module.exports = {
   getBookingsByUser,
   getBookingsByEvent,
   cancelBookingRecord,
+  updateBookingPaymentStatus,
 };

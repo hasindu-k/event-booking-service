@@ -5,6 +5,7 @@ const {
   getUserBookings,
   getEventBookings,
   cancelBooking,
+  updatePaymentStatus,
 } = require("../controllers/booking.controller");
 const verifyToken = require("../middleware/auth.middleware");
 
@@ -17,5 +18,6 @@ router.get("/user/:userId", getUserBookings);
 router.get("/event/:eventId", getEventBookings);
 router.get("/:bookingId", getBooking);
 router.delete("/:bookingId", cancelBooking);
+router.patch("/:bookingId/payment", updatePaymentStatus);
 
 module.exports = router;
