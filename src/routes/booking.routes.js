@@ -6,8 +6,11 @@ const {
   getEventBookings,
   cancelBooking,
 } = require("../controllers/booking.controller");
+const verifyToken = require("../middleware/auth.middleware");
 
 const router = express.Router();
+
+router.use(verifyToken);
 
 router.post("/", createBooking);
 router.get("/user/:userId", getUserBookings);
