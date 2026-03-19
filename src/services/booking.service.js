@@ -5,6 +5,100 @@ const {
 } = require("./interservice/event.service");
 const { getUserDetails } = require("./interservice/user.service");
 const { refundPayment } = require("./interservice/payment.service");
+const {
+  sendNotificationEvent,
+} = require("./interservice/notification.service");
+
+async function dispatchNotification(payload, token) {
+  try {
+    await sendNotificationEvent(payload, token);
+  } catch (error) {
+    console.error("Failed to dispatch booking notification:", error.message);
+  }
+}
+
+function buildBookingMetadata(booking) {
+  return {
+    bookingId: booking.id,
+    eventId: booking.eventId,
+    eventTitle: booking.eventName,
+    venue: booking.venue,
+    numberOfTickets: booking.numberOfTickets,
+    totalAmount: booking.totalAmount,
+    bookingStatus: booking.bookingStatus,
+    paymentStatus: booking.paymentStatus,
+  };
+}
+
+async function notifyBookingCreated(booking, token) {
+  await dispatchNotification({
+    eventType: "BOOKING_PENDING",
+    source: "BOOKING_SERVICE",
+    entityId: booking.id,
+    entityType: "BOOKING",
+    actorUserId: booking.userId,
+    recipients: {
+      userId: booking.userId,
+    },
+    metadata: buildBookingMetadata(booking),
+  }, token);
+}
+
+async function notifyBookingUpdated(booking, token) {
+  await dispatchNotification({
+    eventType: "BOOKING_UPDATED",
+    source: "BOOKING_SERVICE",
+    entityId: booking.id,
+    entityType: "BOOKING",
+    actorUserId: booking.userId,
+    recipients: {
+      userId: booking.userId,
+    },
+    metadata: buildBookingMetadata(booking),
+  }, token);
+}
+
+async function notifyBookingConfirmed(booking, token) {
+  await dispatchNotification({
+    eventType: "BOOKING_CONFIRMED",
+    source: "BOOKING_SERVICE",
+    entityId: booking.id,
+    entityType: "BOOKING",
+    actorUserId: booking.userId,
+    recipients: {
+      userId: booking.userId,
+    },
+    metadata: buildBookingMetadata(booking),
+  }, token);
+
+  await dispatchNotification({
+    eventType: "BOOKING_CONFIRMED",
+    source: "BOOKING_SERVICE",
+    entityId: booking.id,
+    entityType: "BOOKING",
+    actorUserId: booking.userId,
+    recipients: {
+      roles: ["ADMIN"],
+    },
+    title: "Booking confirmed for event",
+    message: `${booking.numberOfTickets} seat(s) are booked for ${booking.eventName}.`,
+    metadata: buildBookingMetadata(booking),
+  }, token);
+}
+
+async function notifyBookingCancelled(booking, token) {
+  await dispatchNotification({
+    eventType: "BOOKING_CANCELLED",
+    source: "BOOKING_SERVICE",
+    entityId: booking.id,
+    entityType: "BOOKING",
+    actorUserId: booking.userId,
+    recipients: {
+      userId: booking.userId,
+    },
+    metadata: buildBookingMetadata(booking),
+  }, token);
+}
 
 const buildSortOptions = (sortBy, sortOrder) => {
   const allowedSortFields = ["createdAt", "eventDate"];
@@ -45,6 +139,8 @@ const createBookingRecord = async ({
     bookingStatus: "PENDING",
   });
 
+  await notifyBookingCreated(booking, token);
+
   return {
     id: booking.id,
     userId: booking.userId,
@@ -61,12 +157,15 @@ const createBookingRecord = async ({
   };
 };
 
-const updateBookingPaymentStatus = async (bookingId, paymentStatus) => {
+const updateBookingPaymentStatus = async (bookingId, paymentStatus, token) => {
   const booking = await Booking.findById(bookingId);
 
   if (!booking) {
     return null;
   }
+
+  const previousPaymentStatus = booking.paymentStatus;
+  const previousBookingStatus = booking.bookingStatus;
 
   booking.paymentStatus = paymentStatus;
   if (paymentStatus === "SUCCESS") {
@@ -75,8 +174,25 @@ const updateBookingPaymentStatus = async (bookingId, paymentStatus) => {
 
   await booking.save();
 
+  const paymentStatusChanged = previousPaymentStatus !== booking.paymentStatus;
+  const bookingStatusChanged = previousBookingStatus !== booking.bookingStatus;
+
+  if (paymentStatusChanged || bookingStatusChanged) {
+    if (paymentStatus === "SUCCESS") {
+      await notifyBookingConfirmed(booking, token);
+    } else {
+      await notifyBookingUpdated(booking, token);
+    }
+  }
+
   return {
     id: booking.id,
+    userId: booking.userId,
+    eventId: booking.eventId,
+    eventName: booking.eventName,
+    venue: booking.venue,
+    numberOfTickets: booking.numberOfTickets,
+    totalAmount: booking.totalAmount,
     status: booking.bookingStatus,
     paymentStatus: booking.paymentStatus,
   };
@@ -220,12 +336,17 @@ const cancelBookingRecord = async (bookingId, token) => {
   booking.paymentStatus = "REFUNDED";
   await booking.save();
 
+  await notifyBookingCancelled(booking, token);
+
   return {
     booking: {
       id: booking.id,
       userId: booking.userId,
       eventId: booking.eventId,
+      eventName: booking.eventName,
+      venue: booking.venue,
       numberOfTickets: booking.numberOfTickets,
+      totalAmount: booking.totalAmount,
       status: booking.bookingStatus,
       paymentStatus: booking.paymentStatus,
     },
@@ -243,3 +364,5 @@ module.exports = {
   cancelBookingRecord,
   updateBookingPaymentStatus,
 };
+
+
