@@ -26,7 +26,7 @@ app.use(express.json());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use((req, res, next) => {
-  console.log("Booking service received:", req.method, req.url);
+  console.log("Booking service received: updated", req.method, req.url);
   next();
 });
 
