@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Deploy
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -19,15 +19,62 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Login to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push Docker image
+      # Login to Azure Container Registry
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: eventapicontainer-apapfzb4dzhmemat.azurecr.io
+          username: ${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_915CA9A8749440F0AA9244A5C9366783 }}
+          password: ${{ secrets.AZUREAPPSERVICE_CONTAINERPASSWORD_66F8A3B1F7F442BE9F0F46AEB280A072 }}
+
+      # Build and push to Docker Hub
+      - name: Build and push Docker image to Docker Hub
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/event-booking-service:latest
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/event-booking-service:latest
+            ${{ secrets.DOCKER_USERNAME }}/event-booking-service:${{ github.sha }}
+          file: ./Dockerfile
+
+      # Build and push to ACR
+      - name: Build and push Docker image to ACR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            eventapicontainer-apapfzb4dzhmemat.azurecr.io/${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_915CA9A8749440F0AA9244A5C9366783 }}/event-booking-service:latest
+            eventapicontainer-apapfzb4dzhmemat.azurecr.io/${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_915CA9A8749440F0AA9244A5C9366783 }}/event-booking-service:${{ github.sha }}
+          file: ./Dockerfile
+
+  deploy-to-azure:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    needs: build-and-push
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_A10F88B287A943CBB195F19AA9F8855B }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_09C9941F62F644F9A99A2E5224180785 }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_8F96ABED53BE4E2DBE35DE4EAA436AFE }}
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "event-booking-service"
+          slot-name: "Production"
+          images: "eventapicontainer-apapfzb4dzhmemat.azurecr.io/${{ secrets.AZUREAPPSERVICE_CONTAINERUSERNAME_915CA9A8749440F0AA9244A5C9366783 }}/event-booking-service:${{ github.sha }}"
