@@ -30,10 +30,15 @@ jobs:
       - name: Push Docker image to Docker Hub
         run: docker push ${{ secrets.DOCKER_USERNAME }}/event-booking-service:latest
 
-      - name: Azure Web App Deploy
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: event-booking-service
-          publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-          images: ${{ secrets.DOCKER_USERNAME }}/event-booking-service:latest
-          slot-name: production
+      - name: Decode Publish Profile and Deploy to Azure
+        run: |
+          echo "${{ secrets.AZURE_PUBLISH_PROFILE }}" > publishProfile.json
+          user_name=$(jq -r '.[0].userName' publishProfile.json)
+          user_pwd=$(jq -r '.[0].userPWD' publishProfile.json)
+          publish_url=$(jq -r '.[0].publishUrl' publishProfile.json)
+
+          # Deploy to Azure using MSDeploy
+          curl -X POST \
+            -u "${user_name}:${user_pwd}" \
+            --data-binary @publishProfile.json \
+            "${publish_url}/api/zipdeploy?isAsync=true"
