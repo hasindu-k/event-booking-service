@@ -102,6 +102,7 @@ const updatePaymentStatus = async (req, res, next) => {
     const booking = await updateBookingPaymentStatus(
       req.params.bookingId,
       paymentStatus,
+      req.token,
     );
 
     if (!booking) {
