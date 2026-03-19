@@ -3,6 +3,7 @@ const {
   createBooking,
   getBooking,
   getUserBookings,
+  getCurrentUserBookings,
   getEventBookings,
   cancelBooking,
   updatePaymentStatus,
@@ -14,6 +15,7 @@ const router = express.Router();
 router.use(verifyToken);
 
 router.post("/", createBooking);
+router.get("/user/me", getCurrentUserBookings);
 router.get("/user/:userId", getUserBookings);
 router.get("/event/:eventId", getEventBookings);
 router.get("/:bookingId", getBooking);

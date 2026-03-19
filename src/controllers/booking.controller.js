@@ -57,6 +57,17 @@ const getUserBookings = async (req, res, next) => {
   }
 };
 
+const getCurrentUserBookings = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { status } = req.query;
+    const bookings = await getBookingsByUser(userId, status);
+    return successResponse(res, bookings);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const getEventBookings = async (req, res, next) => {
   try {
     const { status } = req.query;
@@ -107,6 +118,7 @@ module.exports = {
   createBooking,
   getBooking,
   getUserBookings,
+  getCurrentUserBookings,
   getEventBookings,
   cancelBooking,
   updatePaymentStatus,

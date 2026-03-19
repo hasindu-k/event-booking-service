@@ -112,6 +112,29 @@ paths:
           description: Booking not found
         "500":
           description: Internal server error
+  /user/me:
+    get:
+      summary: Get current user bookings
+      tags:
+        - Bookings
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+          required: false
+          description: Filter by booking status
+      responses:
+        "200":
+          description: List of current user bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserBooking"
+        "500":
+          description: Internal server error
   /user/{userId}:
     get:
       summary: Get bookings by user ID

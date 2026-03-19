@@ -10,7 +10,11 @@ const { getDbStatus } = require("./config/db");
 const app = express();
 app.use(
   cors({
-    origin: process.env.API_GATEWAY_URL || "http://localhost:8080",
+    origin: [
+      process.env.API_GATEWAY_URL,
+      process.env.FRONTEND_URL,
+      "http://localhost:8080",
+    ],
   }),
 );
 const swaggerDocument = YAML.load(
