@@ -13,7 +13,7 @@ app.use(
     origin: [
       process.env.API_GATEWAY_URL,
       process.env.FRONTEND_URL,
-      "http://localhost:8080",
+      "http://localhost:8086",
     ],
   }),
 );
