@@ -49,8 +49,13 @@ const getBooking = async (req, res, next) => {
 
 const getUserBookings = async (req, res, next) => {
   try {
-    const { status } = req.query;
-    const bookings = await getBookingsByUser(req.params.userId, status);
+    const { status, sortBy, sortOrder } = req.query;
+    const bookings = await getBookingsByUser(
+      req.params.userId,
+      status,
+      sortBy,
+      sortOrder,
+    );
     return successResponse(res, bookings);
   } catch (error) {
     return next(error);
@@ -60,8 +65,8 @@ const getUserBookings = async (req, res, next) => {
 const getCurrentUserBookings = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { status } = req.query;
-    const bookings = await getBookingsByUser(userId, status);
+    const { status, sortBy, sortOrder } = req.query;
+    const bookings = await getBookingsByUser(userId, status, sortBy, sortOrder);
     return successResponse(res, bookings);
   } catch (error) {
     return next(error);
@@ -70,8 +75,13 @@ const getCurrentUserBookings = async (req, res, next) => {
 
 const getEventBookings = async (req, res, next) => {
   try {
-    const { status } = req.query;
-    const bookings = await getBookingsByEvent(req.params.eventId, status);
+    const { status, sortBy, sortOrder } = req.query;
+    const bookings = await getBookingsByEvent(
+      req.params.eventId,
+      status,
+      sortBy,
+      sortOrder,
+    );
     return successResponse(res, bookings);
   } catch (error) {
     return next(error);

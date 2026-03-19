@@ -6,6 +6,17 @@ const {
 const { getUserDetails } = require("./interservice/user.service");
 const { refundPayment } = require("./interservice/payment.service");
 
+const buildSortOptions = (sortBy, sortOrder) => {
+  const allowedSortFields = ["createdAt", "eventDate"];
+  const normalizedSortBy = allowedSortFields.includes(sortBy)
+    ? sortBy
+    : "createdAt";
+  const normalizedSortOrder =
+    String(sortOrder || "desc").toLowerCase() === "asc" ? 1 : -1;
+
+  return { [normalizedSortBy]: normalizedSortOrder };
+};
+
 const createBookingRecord = async ({
   userId,
   eventId,
@@ -41,6 +52,7 @@ const createBookingRecord = async ({
     eventId: booking.eventId,
     eventName: booking.eventName,
     eventDate: booking.eventDate,
+    createdAt: booking.createdAt,
     venue: booking.venue,
     numberOfTickets: booking.numberOfTickets,
     status: booking.bookingStatus,
@@ -84,6 +96,7 @@ const getBookingById = async (bookingId) => {
     eventId: booking.eventId,
     eventName: booking.eventName,
     eventDate: booking.eventDate,
+    createdAt: booking.createdAt,
     venue: booking.venue,
     numberOfTickets: booking.numberOfTickets,
     totalAmount: booking.totalAmount,
@@ -91,12 +104,13 @@ const getBookingById = async (bookingId) => {
   };
 };
 
-const getBookingsByUser = async (userId, status) => {
+const getBookingsByUser = async (userId, status, sortBy, sortOrder) => {
   const query = { userId };
   if (status) {
     query.bookingStatus = status;
   }
-  const bookings = await Booking.find(query);
+  const sortOptions = buildSortOptions(sortBy, sortOrder);
+  const bookings = await Booking.find(query).sort(sortOptions);
 
   return bookings.map(
     ({
@@ -104,6 +118,7 @@ const getBookingsByUser = async (userId, status) => {
       eventId,
       eventName,
       eventDate,
+      createdAt,
       venue,
       numberOfTickets,
       totalAmount,
@@ -117,6 +132,7 @@ const getBookingsByUser = async (userId, status) => {
       eventId,
       eventName,
       eventDate,
+      createdAt,
       venue,
       numberOfTickets,
       totalAmount,
@@ -126,17 +142,23 @@ const getBookingsByUser = async (userId, status) => {
   );
 };
 
-const getBookingsByEvent = async (eventId, status) => {
+const getBookingsByEvent = async (eventId, status, sortBy, sortOrder) => {
   const query = { eventId };
   if (status) {
     query.bookingStatus = status;
   }
-  const bookings = await Booking.find(query);
+  const sortOptions = buildSortOptions(sortBy, sortOrder);
+  const bookings = await Booking.find(query).sort(sortOptions);
 
   return bookings.map(
     ({
       id,
       userId,
+      userName,
+      eventName,
+      eventDate,
+      createdAt,
+      venue,
       numberOfTickets,
       totalAmount,
       bookingStatus,
@@ -144,6 +166,11 @@ const getBookingsByEvent = async (eventId, status) => {
     }) => ({
       id,
       userId,
+      userName,
+      eventName,
+      eventDate,
+      createdAt,
+      venue,
       numberOfTickets,
       totalAmount,
       status: bookingStatus,
