@@ -1,41 +1,61 @@
-name: CI/CD
+name: Build and deploy a container to an Azure Web App
+
+env:
+  AZURE_WEBAPP_NAME: event-booking-service # set this to your application's name
 
 on:
   push:
     branches:
       - main
 
+permissions:
+  contents: "read"
+  packages: "write"
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - uses: actions/checkout@v5
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: "20"
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/event-booking-service:latest .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
       - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+        uses: docker/login-action@v2
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Push Docker image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/event-booking-service:latest
+      - name: Lowercase the repo name
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
 
-      - name: Azure Web App Deploy
+      - name: Build and push container image to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: docker.io/${{ secrets.DOCKER_USERNAME }}/event-booking-service:latest # Update with your Docker Hub username and image name
+          file: ./Dockerfile
+
+  deploy:
+    runs-on: ubuntu-latest
+
+    needs: build
+
+    environment:
+      name: "production"
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+      - name: Lowercase the repo name
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >>${GITHUB_ENV}
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: event-booking-service
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-          images: ${{ secrets.DOCKER_USERNAME }}/event-booking-service:latest
-          slot-name: production
-          configuration-source: "Docker"
-          debug: true
+          images: "docker.io/${{ secrets.DOCKER_USERNAME }}/event-booking-service:latest" # Use the Docker Hub image
