@@ -1,6 +1,6 @@
 const Booking = require("../models/booking.model");
 const {
-  ensureEventExists,
+  getEventDetails,
   updateEventSeats,
 } = require("./interservice/event.service");
 const { refundPayment } = require("./interservice/payment.service");
@@ -11,15 +11,17 @@ const createBookingRecord = async ({
   numberOfTickets,
   token,
 }) => {
-  await ensureEventExists(eventId, token);
+  const event = await getEventDetails(eventId, token);
 
-  const totalAmount = numberOfTickets * 1000;
+  const totalAmount = numberOfTickets * (event.ticketPrice || 1000);
 
   await updateEventSeats(eventId, numberOfTickets, "decrease", token);
 
   const booking = await Booking.create({
     userId,
     eventId,
+    eventName: event.name,
+    venue: event.venue,
     numberOfTickets,
     totalAmount,
     paymentStatus: "PENDING",
@@ -30,6 +32,8 @@ const createBookingRecord = async ({
     id: booking.id,
     userId: booking.userId,
     eventId: booking.eventId,
+    eventName: booking.eventName,
+    venue: booking.venue,
     numberOfTickets: booking.numberOfTickets,
     status: booking.bookingStatus,
     paymentStatus: booking.paymentStatus,
@@ -69,6 +73,8 @@ const getBookingById = async (bookingId) => {
     id: booking.id,
     userId: booking.userId,
     eventId: booking.eventId,
+    eventName: booking.eventName,
+    venue: booking.venue,
     numberOfTickets: booking.numberOfTickets,
     totalAmount: booking.totalAmount,
     status: booking.bookingStatus,
@@ -86,6 +92,8 @@ const getBookingsByUser = async (userId, status) => {
     ({
       id,
       eventId,
+      eventName,
+      venue,
       numberOfTickets,
       totalAmount,
       bookingStatus,
@@ -93,6 +101,8 @@ const getBookingsByUser = async (userId, status) => {
     }) => ({
       id,
       eventId,
+      eventName,
+      venue,
       numberOfTickets,
       totalAmount,
       status: bookingStatus,

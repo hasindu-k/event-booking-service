@@ -10,11 +10,16 @@ const pathTemplates = {
     process.env.GATEWAY_EVENT_SEAT_UPDATE_PATH || "/events/{eventId}/seats",
 };
 
-const ensureEventExists = async (eventId, token) => {
+const getEventDetails = async (eventId, token) => {
   const eventPath = buildPath(pathTemplates.eventLookup, { eventId });
 
   try {
-    await gatewayRequest({ method: "GET", path: eventPath, token });
+    const response = await gatewayRequest({
+      method: "GET",
+      path: eventPath,
+      token,
+    });
+    return response.data;
   } catch (error) {
     if (error.statusCode === 404) {
       throw createHttpError("Event not found", 404);
@@ -37,6 +42,6 @@ const updateEventSeats = async (eventId, seatChange, operation, token) => {
 };
 
 module.exports = {
-  ensureEventExists,
+  getEventDetails,
   updateEventSeats,
 };
