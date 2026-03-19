@@ -3,6 +3,7 @@ const {
   getEventDetails,
   updateEventSeats,
 } = require("./interservice/event.service");
+const { getUserDetails } = require("./interservice/user.service");
 const { refundPayment } = require("./interservice/payment.service");
 const {
   sendNotificationEvent,
@@ -99,13 +100,27 @@ async function notifyBookingCancelled(booking, token) {
   }, token);
 }
 
+const buildSortOptions = (sortBy, sortOrder) => {
+  const allowedSortFields = ["createdAt", "eventDate"];
+  const normalizedSortBy = allowedSortFields.includes(sortBy)
+    ? sortBy
+    : "createdAt";
+  const normalizedSortOrder =
+    String(sortOrder || "desc").toLowerCase() === "asc" ? 1 : -1;
+
+  return { [normalizedSortBy]: normalizedSortOrder };
+};
+
 const createBookingRecord = async ({
   userId,
   eventId,
   numberOfTickets,
   token,
 }) => {
-  const event = await getEventDetails(eventId, token);
+  const [event, user] = await Promise.all([
+    getEventDetails(eventId, token),
+    getUserDetails(token),
+  ]);
 
   const totalAmount = numberOfTickets * (event.ticketPrice || 1000);
 
@@ -113,8 +128,10 @@ const createBookingRecord = async ({
 
   const booking = await Booking.create({
     userId,
+    userName: user.name,
     eventId,
     eventName: event.name,
+    eventDate: event.date,
     venue: event.venue,
     numberOfTickets,
     totalAmount,
@@ -127,8 +144,11 @@ const createBookingRecord = async ({
   return {
     id: booking.id,
     userId: booking.userId,
+    userName: booking.userName,
     eventId: booking.eventId,
     eventName: booking.eventName,
+    eventDate: booking.eventDate,
+    createdAt: booking.createdAt,
     venue: booking.venue,
     numberOfTickets: booking.numberOfTickets,
     status: booking.bookingStatus,
@@ -188,8 +208,11 @@ const getBookingById = async (bookingId) => {
   return {
     id: booking.id,
     userId: booking.userId,
+    userName: booking.userName,
     eventId: booking.eventId,
     eventName: booking.eventName,
+    eventDate: booking.eventDate,
+    createdAt: booking.createdAt,
     venue: booking.venue,
     numberOfTickets: booking.numberOfTickets,
     totalAmount: booking.totalAmount,
@@ -197,27 +220,35 @@ const getBookingById = async (bookingId) => {
   };
 };
 
-const getBookingsByUser = async (userId, status) => {
+const getBookingsByUser = async (userId, status, sortBy, sortOrder) => {
   const query = { userId };
   if (status) {
     query.bookingStatus = status;
   }
-  const bookings = await Booking.find(query);
+  const sortOptions = buildSortOptions(sortBy, sortOrder);
+  const bookings = await Booking.find(query).sort(sortOptions);
 
   return bookings.map(
     ({
       id,
       eventId,
       eventName,
+      eventDate,
+      createdAt,
       venue,
       numberOfTickets,
       totalAmount,
       bookingStatus,
       paymentStatus,
+      userName,
     }) => ({
       id,
+      userId,
+      userName,
       eventId,
       eventName,
+      eventDate,
+      createdAt,
       venue,
       numberOfTickets,
       totalAmount,
@@ -227,17 +258,23 @@ const getBookingsByUser = async (userId, status) => {
   );
 };
 
-const getBookingsByEvent = async (eventId, status) => {
+const getBookingsByEvent = async (eventId, status, sortBy, sortOrder) => {
   const query = { eventId };
   if (status) {
     query.bookingStatus = status;
   }
-  const bookings = await Booking.find(query);
+  const sortOptions = buildSortOptions(sortBy, sortOrder);
+  const bookings = await Booking.find(query).sort(sortOptions);
 
   return bookings.map(
     ({
       id,
       userId,
+      userName,
+      eventName,
+      eventDate,
+      createdAt,
+      venue,
       numberOfTickets,
       totalAmount,
       bookingStatus,
@@ -245,6 +282,11 @@ const getBookingsByEvent = async (eventId, status) => {
     }) => ({
       id,
       userId,
+      userName,
+      eventName,
+      eventDate,
+      createdAt,
+      venue,
       numberOfTickets,
       totalAmount,
       status: bookingStatus,
