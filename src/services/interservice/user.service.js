@@ -1,20 +1,15 @@
 const {
-  buildPath,
   createHttpError,
   gatewayRequest,
 } = require("./gateway.client");
 
-const pathTemplates = {
-  userLookup: process.env.GATEWAY_USER_LOOKUP_PATH || "/users/{userId}",
-};
+const userLookupPath = process.env.GATEWAY_USER_LOOKUP_PATH || "/api/users/me";
 
 const getUserDetails = async (token) => {
-  const userPath = buildPath(pathTemplates.userLookup, {});
-
   try {
     const response = await gatewayRequest({
       method: "GET",
-      path: userPath,
+      path: userLookupPath,
       token,
     });
     return response;

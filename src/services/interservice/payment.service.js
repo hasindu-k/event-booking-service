@@ -45,11 +45,12 @@ const createPayment = async ({
   }
 };
 
-const refundPayment = async ({ bookingId, userId, eventId, totalAmount }) => {
+const refundPayment = async ({ bookingId, userId, eventId, totalAmount, token }) => {
   try {
     await gatewayRequest({
       method: "POST",
       path: pathTemplates.paymentRefund,
+      token,
       body: {
         bookingId,
         userId,

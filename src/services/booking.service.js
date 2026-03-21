@@ -83,7 +83,39 @@ async function notifyBookingConfirmed(booking, token) {
     title: "Booking confirmed for event",
     message: `${booking.numberOfTickets} seat(s) are booked for ${booking.eventName}.`,
     metadata: buildBookingMetadata(booking),
-  }, token);
+  }, 
+    token,
+  );
+
+  try {
+    const event = await getEventDetails(booking.eventId, token);
+
+    if (event?.availableSeats === 0) {
+      await dispatchNotification(
+        {
+          eventType: "EVENT_SOLD_OUT",
+          source: "BOOKING_SERVICE",
+          entityId: booking.eventId,
+          entityType: "EVENT",
+          actorUserId: booking.userId,
+          recipients: {
+            roles: ["ADMIN"],
+          },
+          metadata: {
+            ...buildBookingMetadata(booking),
+            availableSeats: event.availableSeats,
+            totalSeats: event.totalSeats,
+          },
+        },
+        token,
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Failed to determine sold-out state after booking confirmation:",
+      error.message,
+    );
+  }
 }
 
 async function notifyBookingCancelled(booking, token) {
@@ -168,6 +200,7 @@ const updateBookingPaymentStatus = async (bookingId, paymentStatus, token) => {
   const previousBookingStatus = booking.bookingStatus;
 
   booking.paymentStatus = paymentStatus;
+
   if (paymentStatus === "SUCCESS") {
     booking.bookingStatus = "CONFIRMED";
   }
