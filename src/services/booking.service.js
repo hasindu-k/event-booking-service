@@ -31,105 +31,88 @@ function buildBookingMetadata(booking) {
 }
 
 async function notifyBookingCreated(booking, token) {
-  await dispatchNotification({
-    eventType: "BOOKING_PENDING",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      userId: booking.userId,
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_PENDING",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        userId: booking.userId,
+      },
+      metadata: buildBookingMetadata(booking),
     },
-    metadata: buildBookingMetadata(booking),
-  }, token);
+    token,
+  );
 }
 
 async function notifyBookingUpdated(booking, token) {
-  await dispatchNotification({
-    eventType: "BOOKING_UPDATED",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      userId: booking.userId,
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_UPDATED",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        userId: booking.userId,
+      },
+      metadata: buildBookingMetadata(booking),
     },
-    metadata: buildBookingMetadata(booking),
-  }, token);
+    token,
+  );
 }
 
 async function notifyBookingConfirmed(booking, token) {
-  await dispatchNotification({
-    eventType: "BOOKING_CONFIRMED",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      userId: booking.userId,
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_CONFIRMED",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        userId: booking.userId,
+      },
+      metadata: buildBookingMetadata(booking),
     },
-    metadata: buildBookingMetadata(booking),
-  }, token);
-
-  await dispatchNotification({
-    eventType: "BOOKING_CONFIRMED",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      roles: ["ADMIN"],
-    },
-    title: "Booking confirmed for event",
-    message: `${booking.numberOfTickets} seat(s) are booked for ${booking.eventName}.`,
-    metadata: buildBookingMetadata(booking),
-  }, 
     token,
   );
 
-  try {
-    const event = await getEventDetails(booking.eventId, token);
-
-    if (event?.availableSeats === 0) {
-      await dispatchNotification(
-        {
-          eventType: "EVENT_SOLD_OUT",
-          source: "BOOKING_SERVICE",
-          entityId: booking.eventId,
-          entityType: "EVENT",
-          actorUserId: booking.userId,
-          recipients: {
-            roles: ["ADMIN"],
-          },
-          metadata: {
-            ...buildBookingMetadata(booking),
-            availableSeats: event.availableSeats,
-            totalSeats: event.totalSeats,
-          },
-        },
-        token,
-      );
-    }
-  } catch (error) {
-    console.error(
-      "Failed to determine sold-out state after booking confirmation:",
-      error.message,
-    );
-  }
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_CONFIRMED",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        roles: ["ADMIN"],
+      },
+      title: "Booking confirmed for event",
+      message: `${booking.numberOfTickets} seat(s) are booked for ${booking.eventName}.`,
+      metadata: buildBookingMetadata(booking),
+    },
+    token,
+  );
 }
 
 async function notifyBookingCancelled(booking, token) {
-  await dispatchNotification({
-    eventType: "BOOKING_CANCELLED",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      userId: booking.userId,
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_CANCELLED",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        userId: booking.userId,
+      },
+      metadata: buildBookingMetadata(booking),
     },
-    metadata: buildBookingMetadata(booking),
-  }, token);
+    token,
+  );
 }
 
 const buildSortOptions = (sortBy, sortOrder) => {
@@ -154,7 +137,9 @@ const createBookingRecord = async ({
     getUserDetails(token),
   ]);
 
-  const totalAmount = numberOfTickets * (event.ticketPrice || 1000);
+  const total = numberOfTickets * (event.ticketPrice || 1000);
+  const serviceFee = Math.round(total * 0.1);
+  const totalAmount = total + serviceFee;
 
   await updateEventSeats(eventId, numberOfTickets, "decrease", token);
 
@@ -190,32 +175,27 @@ const createBookingRecord = async ({
 };
 
 const updateBookingPaymentStatus = async (bookingId, paymentStatus, token) => {
-  const booking = await Booking.findById(bookingId);
+  const bookingStatus = paymentStatus === "SUCCESS" ? "CONFIRMED" : "PENDING";
+
+  const booking = await Booking.findByIdAndUpdate(
+    bookingId,
+    {
+      $set: {
+        paymentStatus,
+        bookingStatus,
+      },
+    },
+    { new: true, runValidators: false },
+  );
 
   if (!booking) {
     return null;
   }
 
-  const previousPaymentStatus = booking.paymentStatus;
-  const previousBookingStatus = booking.bookingStatus;
-
-  booking.paymentStatus = paymentStatus;
-
   if (paymentStatus === "SUCCESS") {
-    booking.bookingStatus = "CONFIRMED";
-  }
-
-  await booking.save();
-
-  const paymentStatusChanged = previousPaymentStatus !== booking.paymentStatus;
-  const bookingStatusChanged = previousBookingStatus !== booking.bookingStatus;
-
-  if (paymentStatusChanged || bookingStatusChanged) {
-    if (paymentStatus === "SUCCESS") {
-      await notifyBookingConfirmed(booking, token);
-    } else {
-      await notifyBookingUpdated(booking, token);
-    }
+    await notifyBookingConfirmed(booking, token);
+  } else {
+    await notifyBookingUpdated(booking, token);
   }
 
   return {
@@ -397,5 +377,3 @@ module.exports = {
   cancelBookingRecord,
   updateBookingPaymentStatus,
 };
-
-
