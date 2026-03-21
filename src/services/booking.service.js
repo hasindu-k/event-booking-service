@@ -31,73 +31,88 @@ function buildBookingMetadata(booking) {
 }
 
 async function notifyBookingCreated(booking, token) {
-  await dispatchNotification({
-    eventType: "BOOKING_PENDING",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      userId: booking.userId,
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_PENDING",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        userId: booking.userId,
+      },
+      metadata: buildBookingMetadata(booking),
     },
-    metadata: buildBookingMetadata(booking),
-  }, token);
+    token,
+  );
 }
 
 async function notifyBookingUpdated(booking, token) {
-  await dispatchNotification({
-    eventType: "BOOKING_UPDATED",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      userId: booking.userId,
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_UPDATED",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        userId: booking.userId,
+      },
+      metadata: buildBookingMetadata(booking),
     },
-    metadata: buildBookingMetadata(booking),
-  }, token);
+    token,
+  );
 }
 
 async function notifyBookingConfirmed(booking, token) {
-  await dispatchNotification({
-    eventType: "BOOKING_CONFIRMED",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      userId: booking.userId,
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_CONFIRMED",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        userId: booking.userId,
+      },
+      metadata: buildBookingMetadata(booking),
     },
-    metadata: buildBookingMetadata(booking),
-  }, token);
+    token,
+  );
 
-  await dispatchNotification({
-    eventType: "BOOKING_CONFIRMED",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      roles: ["ADMIN"],
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_CONFIRMED",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        roles: ["ADMIN"],
+      },
+      title: "Booking confirmed for event",
+      message: `${booking.numberOfTickets} seat(s) are booked for ${booking.eventName}.`,
+      metadata: buildBookingMetadata(booking),
     },
-    title: "Booking confirmed for event",
-    message: `${booking.numberOfTickets} seat(s) are booked for ${booking.eventName}.`,
-    metadata: buildBookingMetadata(booking),
-  }, token);
+    token,
+  );
 }
 
 async function notifyBookingCancelled(booking, token) {
-  await dispatchNotification({
-    eventType: "BOOKING_CANCELLED",
-    source: "BOOKING_SERVICE",
-    entityId: booking.id,
-    entityType: "BOOKING",
-    actorUserId: booking.userId,
-    recipients: {
-      userId: booking.userId,
+  await dispatchNotification(
+    {
+      eventType: "BOOKING_CANCELLED",
+      source: "BOOKING_SERVICE",
+      entityId: booking.id,
+      entityType: "BOOKING",
+      actorUserId: booking.userId,
+      recipients: {
+        userId: booking.userId,
+      },
+      metadata: buildBookingMetadata(booking),
     },
-    metadata: buildBookingMetadata(booking),
-  }, token);
+    token,
+  );
 }
 
 const buildSortOptions = (sortBy, sortOrder) => {
@@ -122,7 +137,9 @@ const createBookingRecord = async ({
     getUserDetails(token),
   ]);
 
-  const totalAmount = numberOfTickets * (event.ticketPrice || 1000);
+  const total = numberOfTickets * (event.ticketPrice || 1000);
+  const serviceFee = Math.round(total * 0.1);
+  const totalAmount = total + serviceFee;
 
   await updateEventSeats(eventId, numberOfTickets, "decrease", token);
 
@@ -364,5 +381,3 @@ module.exports = {
   cancelBookingRecord,
   updateBookingPaymentStatus,
 };
-
-
