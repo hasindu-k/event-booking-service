@@ -175,31 +175,26 @@ const createBookingRecord = async ({
 };
 
 const updateBookingPaymentStatus = async (bookingId, paymentStatus, token) => {
-  const booking = await Booking.findById(bookingId);
+  const bookingStatus = paymentStatus === "SUCCESS" ? "CONFIRMED" : "PENDING";
 
-  if (!booking) {
-    return null;
-  }
+  const booking = await Booking.findByIdAndUpdate(
+    bookingId,
+    {
+      $set: {
+        paymentStatus: paymentStatus,
+        bookingStatus: bookingStatus,
+      },
+    },
+    { new: true, runValidators: false },
+  );
 
-  const previousPaymentStatus = booking.paymentStatus;
-  const previousBookingStatus = booking.bookingStatus;
+  if (!booking) return null;
 
-  booking.paymentStatus = paymentStatus;
+  // 3. Trigger notifications (since status was updated)
   if (paymentStatus === "SUCCESS") {
-    booking.bookingStatus = "CONFIRMED";
-  }
-
-  await booking.save();
-
-  const paymentStatusChanged = previousPaymentStatus !== booking.paymentStatus;
-  const bookingStatusChanged = previousBookingStatus !== booking.bookingStatus;
-
-  if (paymentStatusChanged || bookingStatusChanged) {
-    if (paymentStatus === "SUCCESS") {
-      await notifyBookingConfirmed(booking, token);
-    } else {
-      await notifyBookingUpdated(booking, token);
-    }
+    await notifyBookingConfirmed(booking, token);
+  } else {
+    await notifyBookingUpdated(booking, token);
   }
 
   return {
