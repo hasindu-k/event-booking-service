@@ -5,9 +5,9 @@ const {
 } = require("./gateway.client");
 
 const pathTemplates = {
-  eventLookup: process.env.GATEWAY_EVENT_LOOKUP_PATH || "/events/{eventId}",
+  eventLookup: process.env.GATEWAY_EVENT_LOOKUP_PATH || "/api/events/{eventId}",
   eventSeatUpdate:
-    process.env.GATEWAY_EVENT_SEAT_UPDATE_PATH || "/events/{eventId}/seats",
+    process.env.GATEWAY_EVENT_SEAT_UPDATE_PATH || "/api/events/{eventId}/seats",
 };
 
 const getEventDetails = async (eventId, token) => {
