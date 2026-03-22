@@ -128,10 +128,10 @@ const updatePaymentStatus = async (req, res, next) => {
 
 const listBookings = async (req, res, next) => {
   try {
-    const { status, userId, eventId, sortBy, sortOrder, page, limit } =
+    const { status, userName, eventId, sortBy, sortOrder, page, limit } =
       req.query;
     const bookings = await getAllBookings(
-      { status, userId, eventId },
+      { status, userName, eventId },
       sortBy,
       sortOrder,
       Number.parseInt(page) || 1,

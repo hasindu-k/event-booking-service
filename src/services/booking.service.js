@@ -330,7 +330,9 @@ const getAllBookings = async (
 ) => {
   const query = {};
   if (filters.status) query.bookingStatus = filters.status;
-  if (filters.userName) query.userName = filters.userName;
+  if (filters.userName) {
+    query.userName = { $regex: filters.userName, $options: "i" };
+  }
   if (filters.eventId) query.eventId = filters.eventId;
 
   const sortOptions = buildSortOptions(sortBy, sortOrder);
