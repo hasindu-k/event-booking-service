@@ -181,16 +181,17 @@ const updateBookingPaymentStatus = async (bookingId, paymentStatus, token) => {
     bookingId,
     {
       $set: {
-        paymentStatus: paymentStatus,
-        bookingStatus: bookingStatus,
+        paymentStatus,
+        bookingStatus,
       },
     },
     { new: true, runValidators: false },
   );
 
-  if (!booking) return null;
+  if (!booking) {
+    return null;
+  }
 
-  // 3. Trigger notifications (since status was updated)
   if (paymentStatus === "SUCCESS") {
     await notifyBookingConfirmed(booking, token);
   } else {
