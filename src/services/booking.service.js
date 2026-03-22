@@ -116,7 +116,12 @@ async function notifyBookingCancelled(booking, token) {
 }
 
 const buildSortOptions = (sortBy, sortOrder) => {
-  const allowedSortFields = ["createdAt", "eventDate"];
+  const allowedSortFields = [
+    "createdAt",
+    "eventDate",
+    "totalAmount",
+    "numberOfTickets",
+  ];
   const normalizedSortBy = allowedSortFields.includes(sortBy)
     ? sortBy
     : "createdAt";
@@ -152,6 +157,7 @@ const createBookingRecord = async ({
     venue: event.venue,
     numberOfTickets,
     totalAmount,
+    serviceFee,
     paymentStatus: "PENDING",
     bookingStatus: "PENDING",
   });
@@ -171,6 +177,7 @@ const createBookingRecord = async ({
     status: booking.bookingStatus,
     paymentStatus: booking.paymentStatus,
     totalAmount: booking.totalAmount,
+    serviceFee: booking.serviceFee,
   };
 };
 
@@ -206,6 +213,7 @@ const updateBookingPaymentStatus = async (bookingId, paymentStatus, token) => {
     venue: booking.venue,
     numberOfTickets: booking.numberOfTickets,
     totalAmount: booking.totalAmount,
+    serviceFee: booking.serviceFee,
     status: booking.bookingStatus,
     paymentStatus: booking.paymentStatus,
   };
@@ -229,6 +237,7 @@ const getBookingById = async (bookingId) => {
     venue: booking.venue,
     numberOfTickets: booking.numberOfTickets,
     totalAmount: booking.totalAmount,
+    serviceFee: booking.serviceFee,
     status: booking.bookingStatus,
   };
 };
@@ -254,6 +263,7 @@ const getBookingsByUser = async (userId, status, sortBy, sortOrder) => {
       bookingStatus,
       paymentStatus,
       userName,
+      serviceFee,
     }) => ({
       id,
       userId,
@@ -265,6 +275,7 @@ const getBookingsByUser = async (userId, status, sortBy, sortOrder) => {
       venue,
       numberOfTickets,
       totalAmount,
+      serviceFee,
       status: bookingStatus,
       paymentStatus,
     }),
@@ -292,6 +303,7 @@ const getBookingsByEvent = async (eventId, status, sortBy, sortOrder) => {
       totalAmount,
       bookingStatus,
       paymentStatus,
+      serviceFee,
     }) => ({
       id,
       userId,
@@ -302,10 +314,80 @@ const getBookingsByEvent = async (eventId, status, sortBy, sortOrder) => {
       venue,
       numberOfTickets,
       totalAmount,
+      serviceFee,
       status: bookingStatus,
       paymentStatus,
     }),
   );
+};
+
+const getAllBookings = async (
+  filters,
+  sortBy,
+  sortOrder,
+  page = 1,
+  limit = 10,
+) => {
+  const query = {};
+  if (filters.status) query.bookingStatus = filters.status;
+  if (filters.userName) query.userName = filters.userName;
+  if (filters.eventId) query.eventId = filters.eventId;
+
+  const sortOptions = buildSortOptions(sortBy, sortOrder);
+
+  const skip = (page - 1) * limit;
+  const total = await Booking.countDocuments(query);
+
+  const bookings = await Booking.find(query)
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(limit);
+
+  const mappedBookings = bookings.map(
+    ({
+      _id,
+      id,
+      userId,
+      userName,
+      eventId,
+      eventName,
+      eventDate,
+      createdAt,
+      venue,
+      numberOfTickets,
+      totalAmount,
+      bookingStatus,
+      paymentStatus,
+      serviceFee,
+    }) => ({
+      id: _id || id,
+      userId,
+      userName,
+      eventId,
+      eventName,
+      eventDate,
+      createdAt,
+      venue,
+      numberOfTickets,
+      totalAmount,
+      serviceFee,
+      status: bookingStatus,
+      paymentStatus,
+    }),
+  );
+
+  // Return paginated response
+  return {
+    data: mappedBookings,
+    pagination: {
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      totalItems: total,
+      itemsPerPage: limit,
+      hasNextPage: page < Math.ceil(total / limit),
+      hasPrevPage: page > 1,
+    },
+  };
 };
 
 const cancelBookingRecord = async (bookingId, token) => {
@@ -360,6 +442,7 @@ const cancelBookingRecord = async (bookingId, token) => {
       venue: booking.venue,
       numberOfTickets: booking.numberOfTickets,
       totalAmount: booking.totalAmount,
+      serviceFee: booking.serviceFee,
       status: booking.bookingStatus,
       paymentStatus: booking.paymentStatus,
     },
@@ -376,4 +459,5 @@ module.exports = {
   getBookingsByEvent,
   cancelBookingRecord,
   updateBookingPaymentStatus,
+  getAllBookings,
 };

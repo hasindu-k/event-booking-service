@@ -5,6 +5,7 @@ const {
   getBookingsByEvent,
   cancelBookingRecord,
   updateBookingPaymentStatus,
+  getAllBookings,
 } = require("../services/booking.service");
 const { successResponse, errorResponse } = require("../utils/apiResponse");
 
@@ -125,6 +126,23 @@ const updatePaymentStatus = async (req, res, next) => {
   }
 };
 
+const listBookings = async (req, res, next) => {
+  try {
+    const { status, userId, eventId, sortBy, sortOrder, page, limit } =
+      req.query;
+    const bookings = await getAllBookings(
+      { status, userId, eventId },
+      sortBy,
+      sortOrder,
+      Number.parseInt(page) || 1,
+      Number.parseInt(limit) || 10,
+    );
+    return successResponse(res, bookings);
+  } catch (error) {
+    return next(error);
+  }
+};
+
 module.exports = {
   createBooking,
   getBooking,
@@ -133,4 +151,5 @@ module.exports = {
   getEventBookings,
   cancelBooking,
   updatePaymentStatus,
+  listBookings,
 };

@@ -4,10 +4,61 @@ info:
   version: 1.0.0
   description: API for managing event bookings
 servers:
-  - url: http://localhost:3001
+  - url: http://localhost:3001/api/bookings
     description: Local server
 paths:
   /:
+    get:
+      summary: List all bookings
+      tags:
+        - Bookings
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [PENDING, CONFIRMED, CANCELLED]
+          required: false
+          description: Filter by booking status
+        - in: query
+          name: userId
+          schema:
+            type: string
+          required: false
+          description: Filter by user ID
+        - in: query
+          name: eventId
+          schema:
+            type: string
+          required: false
+          description: Filter by event ID
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, eventDate]
+            default: createdAt
+          required: false
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          required: false
+          description: Sort order
+      responses:
+        "200":
+          description: List of all bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BookingDetails"
+        "500":
+          description: Internal server error
     post:
       summary: Create a new booking
       tags:
@@ -122,8 +173,25 @@ paths:
           name: status
           schema:
             type: string
+            enum: [PENDING, CONFIRMED, CANCELLED]
           required: false
           description: Filter by booking status
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, eventDate]
+            default: createdAt
+          required: false
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          required: false
+          description: Sort order
       responses:
         "200":
           description: List of current user bookings
@@ -132,7 +200,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/UserBooking"
+                  $ref: "#/components/schemas/BookingDetails"
         "500":
           description: Internal server error
   /user/{userId}:
@@ -151,8 +219,25 @@ paths:
           name: status
           schema:
             type: string
+            enum: [PENDING, CONFIRMED, CANCELLED]
           required: false
           description: Filter by booking status
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, eventDate]
+            default: createdAt
+          required: false
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          required: false
+          description: Sort order
       responses:
         "200":
           description: List of user bookings
@@ -161,7 +246,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/UserBooking"
+                  $ref: "#/components/schemas/BookingDetails"
         "500":
           description: Internal server error
   /event/{eventId}:
@@ -180,8 +265,25 @@ paths:
           name: status
           schema:
             type: string
+            enum: [PENDING, CONFIRMED, CANCELLED]
           required: false
           description: Filter by booking status
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [createdAt, eventDate]
+            default: createdAt
+          required: false
+          description: Field to sort by
+        - in: query
+          name: sortOrder
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          required: false
+          description: Sort order
       responses:
         "200":
           description: List of event bookings
@@ -190,7 +292,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/EventBooking"
+                  $ref: "#/components/schemas/BookingDetails"
         "500":
           description: Internal server error
 
@@ -217,15 +319,29 @@ components:
           type: string
         userId:
           type: string
+        userName:
+          type: string
         eventId:
+          type: string
+        eventName:
+          type: string
+        eventDate:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        venue:
           type: string
         numberOfTickets:
           type: integer
+        totalAmount:
+          type: number
+        serviceFee:
+          type: number
         status:
           type: string
         paymentStatus:
-          type: string
-        paymentReferenceId:
           type: string
 
     BookingDetails:
@@ -235,38 +351,26 @@ components:
           type: string
         userId:
           type: string
-        eventId:
-          type: string
-        numberOfTickets:
-          type: integer
-        status:
-          type: string
-        paymentStatus:
-          type: string
-
-    UserBooking:
-      type: object
-      properties:
-        id:
+        userName:
           type: string
         eventId:
           type: string
-        numberOfTickets:
-          type: integer
-        status:
+        eventName:
           type: string
-        paymentStatus:
+        eventDate:
           type: string
-
-    EventBooking:
-      type: object
-      properties:
-        id:
+          format: date-time
+        createdAt:
           type: string
-        userId:
+          format: date-time
+        venue:
           type: string
         numberOfTickets:
           type: integer
+        totalAmount:
+          type: number
+        serviceFee:
+          type: number
         status:
           type: string
         paymentStatus:

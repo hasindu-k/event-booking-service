@@ -9,6 +9,7 @@ const bookingSchema = new mongoose.Schema({
   venue: { type: String, required: true },
   numberOfTickets: { type: Number, required: true },
   totalAmount: { type: Number, required: true },
+  serviceFee: { type: Number, required: true },
   paymentStatus: {
     type: String,
     enum: ["PENDING", "SUCCESS", "FAILED", "REFUNDED"],
