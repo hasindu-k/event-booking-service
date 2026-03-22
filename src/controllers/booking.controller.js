@@ -15,6 +15,7 @@ const createBooking = async (req, res, next) => {
     const { eventId, numberOfTickets } = req.body;
 
     if (!eventId || !numberOfTickets) {
+      console.warn("[createBooking] Missing fields");
       return errorResponse(
         res,
         "eventId and numberOfTickets are required",
@@ -30,6 +31,7 @@ const createBooking = async (req, res, next) => {
     });
     return successResponse(res, booking, 201);
   } catch (error) {
+    console.error("[createBooking] Error:", error);
     return next(error);
   }
 };
@@ -39,11 +41,13 @@ const getBooking = async (req, res, next) => {
     const booking = await getBookingById(req.params.bookingId);
 
     if (!booking) {
+      console.warn("[getBooking] Booking not found", req.params.bookingId);
       return errorResponse(res, "Booking not found", 404);
     }
 
     return successResponse(res, booking);
   } catch (error) {
+    console.error("[getBooking] Error:", error);
     return next(error);
   }
 };
@@ -59,6 +63,7 @@ const getUserBookings = async (req, res, next) => {
     );
     return successResponse(res, bookings);
   } catch (error) {
+    console.error("[getUserBookings] Error:", error);
     return next(error);
   }
 };
@@ -70,6 +75,7 @@ const getCurrentUserBookings = async (req, res, next) => {
     const bookings = await getBookingsByUser(userId, status, sortBy, sortOrder);
     return successResponse(res, bookings);
   } catch (error) {
+    console.error("[getCurrentUserBookings] Error:", error);
     return next(error);
   }
 };
@@ -85,6 +91,7 @@ const getEventBookings = async (req, res, next) => {
     );
     return successResponse(res, bookings);
   } catch (error) {
+    console.error("[getEventBookings] Error:", error);
     return next(error);
   }
 };
@@ -94,11 +101,13 @@ const cancelBooking = async (req, res, next) => {
     const result = await cancelBookingRecord(req.params.bookingId, req.token);
 
     if (!result) {
+      console.warn("[cancelBooking] Booking not found", req.params.bookingId);
       return errorResponse(res, "Booking not found", 404);
     }
 
     return successResponse(res, result);
   } catch (error) {
+    console.error("[cancelBooking] Error:", error);
     return next(error);
   }
 };
@@ -107,6 +116,7 @@ const updatePaymentStatus = async (req, res, next) => {
   try {
     const { paymentStatus } = req.body;
     if (!paymentStatus) {
+      console.warn("[updatePaymentStatus] Missing paymentStatus");
       return errorResponse(res, "paymentStatus is required", 400);
     }
 
@@ -117,11 +127,16 @@ const updatePaymentStatus = async (req, res, next) => {
     );
 
     if (!booking) {
+      console.warn(
+        "[updatePaymentStatus] Booking not found",
+        req.params.bookingId,
+      );
       return errorResponse(res, "Booking not found", 404);
     }
 
     return successResponse(res, booking);
   } catch (error) {
+    console.error("[updatePaymentStatus] Error:", error);
     return next(error);
   }
 };
@@ -139,6 +154,7 @@ const listBookings = async (req, res, next) => {
     );
     return successResponse(res, bookings);
   } catch (error) {
+    console.error("[listBookings] Error:", error);
     return next(error);
   }
 };

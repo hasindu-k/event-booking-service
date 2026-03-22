@@ -30,6 +30,13 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get("/", (req, res) => {
+  res.status(200).json({
+    service: "Booking Service",
+    status: "Running",
+  });
+});
+
 app.get("/health/db", (req, res) => {
   const dbStatus = getDbStatus();
   const statusCode = dbStatus.state === "connected" ? 200 : 503;
