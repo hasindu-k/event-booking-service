@@ -421,14 +421,6 @@ const cancelBookingRecord = async (bookingId, token) => {
     token,
   );
 
-  await refundPayment({
-    bookingId: booking.id,
-    userId: booking.userId,
-    eventId: booking.eventId,
-    totalAmount: booking.totalAmount,
-    token,
-  });
-
   booking.bookingStatus = "CANCELLED";
   booking.paymentStatus = "REFUNDED";
   await booking.save();
