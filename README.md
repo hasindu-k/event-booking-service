@@ -2,38 +2,9 @@
 
 Layered Node.js booking service scaffold.
 
-## Project Structure
+## Architecture
 
-```
-event-booking-service/
-├── src/
-│ ├── config/
-│ │ └── db.js
-│ ├── controllers/
-│ │ └── booking.controller.js
-│ ├── routes/
-│ │ └── booking.routes.js
-│ ├── models/
-│ │ └── booking.model.js
-│ ├── services/
-│ │ └── booking.service.js
-│ ├── utils/
-│ │ └── apiResponse.js
-│ ├── middleware/
-│ │ └── errorHandler.js
-│ └── app.js
-├── swagger/
-│ └── swagger.yaml
-├── .github/
-│ └── workflows/
-│ └── ci-cd.yml
-├── Dockerfile
-├── .dockerignore
-├── .env.example
-├── package.json
-├── server.js
-└── README.md
-```
+This service follows a layered architecture with separate routes, controllers, services, models, middleware, and configuration modules.
 
 ## Run
 
@@ -65,3 +36,20 @@ Environment variables:
 - `GATEWAY_PAYMENT_REFUND_PATH=/payments/refund`
 
 `{userId}` and `{eventId}` placeholders are replaced at runtime.
+
+## Microservice ecosystem
+
+This service is part of the Event Booking platform:
+
+- [Event API Gateway](https://github.com/hasindu-k/event-api-gateway) — request routing, authentication, and API documentation
+- [Event Booking Service](https://github.com/hasindu-k/event-booking-service) — booking management
+- [Event Service](https://github.com/OshadiJayananda/event-ticket-event-service) — event management
+- [User Service](https://github.com/Miyuri15/event-booking-user-service) — user accounts and authentication
+- [Payment Service](https://github.com/IT22362476/Event-Booking-paymentservice) — payment processing
+
+The API gateway routes client requests to this service and the other appropriate downstream services.
+
+## Frontend application
+
+- [Event Booking Frontend](https://github.com/Miyuri15/event-booking-frontend) — web client for browsing events, managing bookings, and interacting with the platform through this gateway
+- **Live frontend:** [lumaevents.vercel.app](https://lumaevents.vercel.app/)
